@@ -86,6 +86,8 @@ def parse_profile_yaml(yaml_path: Path) -> dict[str, Any]:
             data = yaml.safe_load(content) or {}
         else:  # pragma: no cover
             data = _parse_yaml_fallback(content)
+        if not isinstance(data, dict):
+            data = {}
     except Exception as e:
         logger.error(f"Failed to parse profile yaml at {yaml_path}: {e}")
         return {
@@ -219,10 +221,13 @@ def run_upskill(career_ops_root: Path) -> dict[str, Any]:
         logger.warning(f"Failed to decode JSON from upskill.mjs: {e}")
         return {"known_skills": [], "gaps": []}
 
-    known_skills = [str(s) for s in data.get("knownSkills", [])]
+    if not isinstance(data, dict):
+        return {"known_skills": [], "gaps": []}
+
+    known_skills = [str(s) for s in (data.get("knownSkills") or [])]
 
     gaps: list[str] = []
-    for g in data.get("gaps", []):
+    for g in (data.get("gaps") or []):
         if isinstance(g, dict) and "skill" in g:
             gaps.append(str(g["skill"]))
         elif isinstance(g, str):
