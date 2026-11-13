@@ -1,0 +1,56 @@
+sources:
+  - id: microsoft-mvtd
+    name: "Microsoft Virtual Training Days"
+    provider: "Microsoft"
+    url: "https://events.microsoft.com/en-us/mvtd"
+    track: "official_voucher"
+    eligible_cert_ids: ["ms-dp-600"]
+    check_interval_hours: 12
+
+  - id: microsoft-challenges
+    name: "Microsoft Cloud Skills Challenges"
+    provider: "Microsoft"
+    url: "https://learn.microsoft.com/en-us/training/challenges"
+    track: "official_voucher"
+    eligible_cert_ids: ["ms-ai-102"]
+    check_interval_hours: 12
+
+  - id: databricks-certification
+    name: "Databricks Certification & Promos"
+    provider: "Databricks"
+    url: "https://www.databricks.com/learn/certification"
+    track: "official_voucher"
+    eligible_cert_ids: ["databricks-gai", "databricks-de"]
+    check_interval_hours: 24
+
+  - id: gcp-arcade
+    name: "Google Cloud Skills Boost Arcade"
+    provider: "Google Cloud"
+    url: "https://go.cloudskillsboost.google/arcade"
+    track: "official_voucher"
+    eligible_cert_ids: ["gcp-ml-eng", "gcp-cloud-digital"]
+    check_interval_hours: 24
+
+  - id: aws-training-events
+    name: "AWS Training & Certification Events"
+    provider: "AWS"
+    url: "https://aws.amazon.com/training/events/"
+    track: "official_voucher"
+    eligible_cert_ids: ["aws-ai-practitioner", "aws-ml-engineer"]
+    check_interval_hours: 24
+
+  - id: dbt-community-scholarships
+    name: "dbt Learn Community Scholarships"
+    provider: "dbt Labs"
+    url: "https://www.getdbt.com/community"
+    track: "official_voucher"
+    eligible_cert_ids: ["dbt-developer"]
+    check_interval_hours: 24
+
+  - id: linux-foundation-scholarships
+    name: "Linux Foundation Diversity Scholarships"
+    provider: "Linux Foundation"
+    url: "https://www.linuxfoundation.org/diversity-inclusivity/scholarships"
+    track: "official_voucher"
+    eligible_cert_ids: ["finops-practitioner"]
+    check_interval_hours: 48
