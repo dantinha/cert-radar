@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CertRadar — Terminal Executivo de Certificações & Vouchers</title>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <!-- MINIMAL DEV HEADER -->
+  <header class="app-header">
+    <div class="brand-wrap">
+      <div class="brand-title">
+        <span class="status-dot pulse" title="Radar Ativo (Task Scheduler 12h)"></span>
+        <span>CertRadar</span>
+      </div>
+      <div class="brand-meta" id="brandMeta">
+        Carregando perfil...
+      </div>
+    </div>
+    <div class="header-actions">
+      <span class="shortcut-badge">j / k : navegar</span>
+      <span class="shortcut-badge">Enter : inspecionar</span>
+      <span class="shortcut-badge">o : abrir link</span>
+      <span class="shortcut-badge">Esc : fechar</span>
+    </div>
+  </header>
+
+  <div class="main-wrap">
+    
+    <!-- TOP HUD METRICS (DEV-TOOL DENSITY) -->
+    <div class="summary-strip">
+      <div class="metric-cell">
+        <span class="metric-label">Vouchers Oficiais Ativos</span>
+        <div class="metric-value-row">
+          <span class="metric-num" id="metricVouchers" style="color: var(--accent-cyan)">0</span>
+          <span class="metric-desc">50% a 100% de desconto</span>
+        </div>
+      </div>
+      <div class="metric-cell">
+        <span class="metric-label">Prazo Crítico (&lt; 48 Horas)</span>
+        <div class="metric-value-row">
+          <span class="metric-num" id="metricUrgent" style="color: var(--accent-red)">0</span>
+          <span class="metric-desc" id="metricUrgentDesc">Monitorando prazos</span>
+        </div>
+      </div>
+      <div class="metric-cell">
+        <span class="metric-label">Micro-credenciais Gratuitas</span>
+        <div class="metric-value-row">
+          <span class="metric-num" id="metricFree" style="color: var(--accent-emerald)">0</span>
+          <span class="metric-desc">Labs práticos contínuos</span>
+        </div>
+      </div>
+      <div class="metric-cell">
+        <span class="metric-label">Fit Médio com seu CV</span>
+        <div class="metric-value-row">
+          <span class="metric-num" id="metricFit" style="color: #38BDF8">--</span>
+          <span class="metric-desc">Alinhamento career-ops</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILTER & SEARCH ROW -->
+    <div class="control-row">
+      <div class="left-controls">
+        <div class="filter-tabs">
+          <button class="filter-btn active" data-tab="all" onclick="setFilter('all', this)">
+            Para Você <span class="pill-count" id="countAll">0</span>
+          </button>
+          <button class="filter-btn" data-tab="voucher" onclick="setFilter('voucher', this)">
+            Vouchers Oficiais <span class="pill-count" id="countVouchers">0</span>
+          </button>
+          <button class="filter-btn" data-tab="free" onclick="setFilter('free', this)">
+            Gratuitas Contínuas <span class="pill-count" id="countFree">0</span>
+          </button>
+          <button class="filter-btn" data-tab="saved" onclick="setFilter('saved', this)">
+            Salvas <span class="pill-count" id="countSaved">0</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="right-controls">
+        <div class="search-wrap">
+          <input type="text" id="searchInput" class="search-box" placeholder="Buscar por skill, exame ou provedor..." oninput="filterSearch(this.value)">
+        </div>
+        <button class="btn-action-small" onclick="openAddModal()">+ Adicionar URL</button>
+      </div>
+    </div>
+
+    <!-- SPLIT LAYOUT: DENSE TABLE + LATERAL INSPECTOR -->
+    <div class="layout-split">
+      
+      <!-- DATA TABLE -->
+      <div class="table-container">
+        <table class="data-table" id="certTable">
+          <thead>
+            <tr>
+              <th style="width: 55px;">Fit</th>
+              <th>Certificação / Exame</th>
+              <th style="width: 110px;">Provedor</th>
+              <th style="width: 120px;">Trilha</th>
+              <th style="width: 140px;">Prazo / Voucher</th>
+              <th style="width: 70px; text-align: right;">Ação</th>
+            </tr>
+          </thead>
+          <tbody id="certTableBody">
+            <tr>
+              <td colspan="6" class="empty-state">Carregando certificações do radar...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- LATERAL INSPECTION DRAWER (LINEAR / RAYCAST STYLE) -->
+      <aside class="drawer-panel" id="inspectorDrawer">
+        <div class="drawer-header">
+          <div>
+            <div class="drawer-title" id="dTitle">Selecione uma certificação</div>
+            <div class="drawer-code" id="dCode">Navegue com j / k ou clique na tabela</div>
+          </div>
+          <span class="status-pill pill-voucher-100" id="dVoucherBadge">--</span>
+        </div>
+
+        <div>
+          <div class="drawer-section-title">📊 Decomposição do Score de Fit</div>
+          <div class="score-breakdown-row">
+            <span>Alinhamento c/ Cargos-Alvo</span>
+            <span class="score-breakdown-val" id="dScoreRole">-- / 35</span>
+          </div>
+          <div class="score-breakdown-row">
+            <span>Fechamento de Gaps Reais</span>
+            <span class="score-breakdown-val" id="dScoreGap">-- / 25</span>
+          </div>
+          <div class="score-breakdown-row">
+            <span>Peso de Mercado (Recruiter Signal)</span>
+            <span class="score-breakdown-val" id="dScoreSignal">-- / 20</span>
+          </div>
+          <div class="score-breakdown-row">
+            <span>Custo & Urgência do Voucher</span>
+            <span class="score-breakdown-val" id="dScoreCost">-- / 20</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="drawer-section-title">🎯 Justificativa Baseada no seu Currículo</div>
+          <div class="cv-justification-box" id="dJustification">
+            Nenhuma certificação selecionada.
+          </div>
+        </div>
+
+        <div>
+          <div class="drawer-section-title">📌 Status de Acompanhamento</div>
+          <div class="status-selector">
+            <button class="status-btn" data-status="radar" onclick="updateCurrentStatus('radar')">Radar</button>
+            <button class="status-btn" data-status="saved" onclick="updateCurrentStatus('saved')">Salva</button>
+            <button class="status-btn status-studying" data-status="studying" onclick="updateCurrentStatus('studying')">Estudando</button>
+            <button class="status-btn status-completed" data-status="completed" onclick="updateCurrentStatus('completed')">Concluída</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="drawer-section-title">⚙️ Ciclo de Conclusão</div>
+          <button class="btn-secondary-dense" style="margin-bottom: 8px;" onclick="generateAndCopySnippet('cv')">
+            📋 Copiar Snippet p/ cv.md
+          </button>
+          <button class="btn-secondary-dense" onclick="generateAndCopySnippet('obsidian')">
+            📓 Copiar Nota p/ Segundo Cérebro
+          </button>
+        </div>
+
+        <div class="drawer-actions">
+          <a href="#" target="_blank" class="btn-primary-dense" id="dLink">
+            Acessar Página Oficial ↗
+          </a>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+
+  <!-- MODAL: ADD MANUAL URL -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal-box">
+      <div class="modal-title">
+        <span>+ Adicionar Nova Certificação ou Voucher</span>
+        <button class="btn-action-small" onclick="closeAddModal()">✕</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Título da Certificação / Exame *</label>
+        <input type="text" id="addTitle" class="form-input" placeholder="Ex: Azure AI Engineer Associate">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">URL Oficial de Registro ou Detalhes *</label>
+        <input type="url" id="addUrl" class="form-input" placeholder="https://learn.microsoft.com/...">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Provedor</label>
+          <input type="text" id="addProvider" class="form-input" placeholder="Microsoft, AWS, etc.">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Código do Exame</label>
+          <input type="text" id="addExamCode" class="form-input" placeholder="Ex: AI-102">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Trilha</label>
+          <select id="addTrack" class="form-input">
+            <option value="official_voucher">Voucher Oficial</option>
+            <option value="free_continuous">Gratuita Contínua</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Desconto (%)</label>
+          <input type="number" id="addDiscount" class="form-input" value="100" min="0" max="100">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Competências Cobertas (separadas por vírgula)</label>
+        <input type="text" id="addSkills" class="form-input" placeholder="Azure OpenAI, Prompt Flow, Vector Search">
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary-dense" style="width:auto;" onclick="closeAddModal()">Cancelar</button>
+        <button class="btn-primary-dense" style="width:auto;" onclick="submitAddUrl()">Salvar & Verificar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
