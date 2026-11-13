@@ -66,6 +66,14 @@ class CertRadarRequestHandler(http.server.SimpleHTTPRequestHandler):
     def _send_error_json(self, message: str, status: int = 400) -> None:
         self._send_json({"error": message}, status=status)
 
+    def _drain_body(self) -> None:
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+            if content_length > 0:
+                self.rfile.read(content_length)
+        except Exception:
+            pass
+
     def _read_json_body(self) -> Optional[dict[str, Any]]:
         try:
             content_length = int(self.headers.get("Content-Length", 0))
@@ -109,11 +117,14 @@ class CertRadarRequestHandler(http.server.SimpleHTTPRequestHandler):
             elif path == "/api/generate-snippet":
                 self._handle_post_generate_snippet()
             elif path in ("/api/profile", "/api/certs"):
+                self._drain_body()
                 self._send_error_json("Method Not Allowed", status=405)
             else:
+                self._drain_body()
                 self._send_error_json("Endpoint not found", status=404)
             return
 
+        self._drain_body()
         self._send_error_json("Method Not Allowed", status=405)
 
     def do_PUT(self) -> None:
@@ -206,6 +217,11 @@ class CertRadarRequestHandler(http.server.SimpleHTTPRequestHandler):
         body = self._read_json_body()
         if not body or not isinstance(body, dict):
             self._send_error_json("Invalid or missing JSON payload", status=400)
+            return
+
+        db = self.db
+        if not db:
+            self._send_error_json("Database not configured", status=500)
             return
 
         url = body.get("url")
