@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CertRadar — Terminal Executivo de Certificações & Vouchers</title>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ==========================================================================
+       TASTE-SKILL DESIGN SYSTEM: ANTI-SLOP DEV-TOOL (LINEAR / GITHUB AESTHETIC)
+       ========================================================================== */
+    :root {
+      --bg-base: #090A0F;
+      --bg-surface: #11131A;
+      --bg-surface-elevated: #161922;
+      --bg-surface-hover: #1D212D;
+      --bg-surface-selected: #222736;
+      
+      --border-subtle: #232734;
+      --border-strong: #32384A;
+      --border-focus: #4F566B;
+      
+      --text-main: #ECEEF2;
+      --text-muted: #9AA2B3;
+      --text-dim: #5D6578;
+      
+      --accent-cyan: #06B6D4;          /* Voucher Oficial */
+      --accent-cyan-subtle: rgba(6, 182, 212, 0.12);
+      --accent-amber: #F59E0B;         /* Prazo Urgente */
+      --accent-amber-subtle: rgba(245, 158, 11, 0.12);
+      --accent-emerald: #10B981;       /* Gratuita Contínua / Live */
+      --accent-emerald-subtle: rgba(16, 185, 129, 0.12);
+      --accent-red: #EF4444;           /* Expirando < 48h */
+      --accent-red-subtle: rgba(239, 68, 68, 0.12);
+      
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-size: 13px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    code, .mono {
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    /* Top Utility Navigation (Linear Style) */
+    .app-header {
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      height: 48px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      display: inline-block;
+    }
+
+    .brand-meta {
+      font-size: 11px;
+      color: var(--text-dim);
+      border-left: 1px solid var(--border-subtle);
+      padding-left: 12px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .shortcut-badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      padding: 2px 5px;
+      color: var(--text-dim);
+    }
+
+    /* Main Container & Top Summary Bar */
+    .main-wrap {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 18px 24px 60px 24px;
+    }
+
+    .summary-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .metric-cell {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .metric-value-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .metric-num {
+      font-size: 20px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      color: var(--text-main);
+    }
+
+    .metric-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Filter & Search Bar */
+    .control-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .filter-tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 3px;
+    }
+
+    .filter-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .filter-btn:hover {
+      color: var(--text-main);
+    }
+
+    .filter-btn.active {
+      background: var(--bg-surface-elevated);
+      color: var(--text-main);
+    }
+
+    .pill-count {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      background: var(--bg-surface-hover);
+      padding: 1px 5px;
+      border-radius: 10px;
+      color: var(--text-dim);
+    }
+
+    .filter-btn.active .pill-count {
+      color: var(--text-muted);
+    }
+
+    .search-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 5px 10px 5px 28px;
+      color: var(--text-main);
+      font-size: 12px;
+      font-family: var(--font-mono);
+      width: 260px;
+      outline: none;
+      position: relative;
+    }
+
+    .search-box:focus {
+      border-color: var(--border-focus);
+    }
+
+    .search-wrap {
+      position: relative;
+    }
+
+    .search-wrap::before {
+      content: '⌕';
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    /* Dense Data Table (GitHub PRs / Linear List Style) */
+    .table-container {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .data-table th {
+      background: var(--bg-surface-elevated);
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-family: var(--font-mono);
+      padding: 8px 14px;
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 10px 14px;
+      vertical-align: middle;
+      font-size: 12px;
+    }
+
+    .data-table tbody tr {
+      cursor: pointer;
+      transition: background var(--transition-fast, 0.1s ease);
+    }
+
+    .data-table tbody tr:hover {
+      background: var(--bg-surface-hover);
+    }
+
+    .data-table tbody tr.selected {
+      background: var(--bg-surface-selected);
+    }
+
+    .data-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Table Column Elements */
+    .col-score {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .score-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface-elevated);
+    }
+
+    .score-high {
+      color: #38BDF8;
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+
+    .exam-title-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .exam-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .exam-name {
+      font-weight: 600;
+      color: var(--text-main);
+      font-size: 13px;
+    }
+
+    .exam-code-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      background: var(--bg-surface-elevated);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    .gaps-list {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .gap-tag {
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 10px;
+    }
+
+    .gap-tag::after {
+      content: ' •';
+      color: var(--text-dim);
+    }
+
+    .gap-tag:last-child::after {
+      content: '';
+    }
+
+    /* Tag Status Pills */
+    .status-pill {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 500;
+      padding: 2px 7px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .pill-voucher-100 {
+      background: var(--accent-cyan-subtle);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+    }
+
+    .pill-voucher-50 {
+      background: rgba(99, 102, 241, 0.12);
+      color: #818CF8;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+
+    .pill-free {
+      background: var(--accent-emerald-subtle);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .pill-urgent {
+      background: var(--accent-red-subtle);
+      color: var(--accent-red);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      font-weight: 600;
+    }
+
+    .btn-action-small {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: var(--font-mono);
+    }
+
+    .btn-action-small:hover {
+      border-color: var(--border-focus);
+      background: var(--bg-surface-hover);
+    }
+
+    /* Side Inspection Drawer (Linear style) */
+    .layout-split {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .drawer-panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 18px;
+      position: sticky;
+      top: 66px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .drawer-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .drawer-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .drawer-code {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    .drawer-section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+      letter-spacing: 0.04em;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+
+    .score-breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      padding: 4px 0;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+    }
+
+    .score-breakdown-row:last-child {
+      border-bottom: none;
+    }
+
+    .score-breakdown-val {
+      font-family: var(--font-mono);
+      color: var(--text-main);
+      font-weight: 500;
+    }
+
+    .cv-justification-box {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    .drawer-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .btn-primary-dense {
+      background: #2563EB;
+      border: 1px solid #1D4ED8;
+      color: #FFFFFF;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      flex: 1;
+      text-align: center;
+      text-decoration: none;
+    }
+
+    .btn-primary-dense:hover {
+      background: #1D4ED8;
+    }
+
+    .btn-secondary-dense {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .btn-secondary-dense:hover {
+      background: var(--bg-surface-hover);
+      border-color: var(--border-focus);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- MINIMAL DEV HEADER -->
+  <header class="app-header">
+    <div class="brand-wrap">
+      <div class="brand-title">
+        <span class="status-dot" title="Radar Ativo (Task Scheduler 12h)"></span>
+        <span>CertRadar</span>
+      </div>
+      <div class="brand-meta">
+        Perfil: <strong style="color:var(--text-main)">Gabriel Dantas</strong> (AI PM / Context Eng) • 14 Gaps mapeados via <code class="mono">career-ops</code>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span class="shortcut-badge">j / k : navegar</span>
+      <span class="shortcut-badge">Enter : detalhes</span>
+      <span class="shortcut-badge">o : abrir link</span>
+    </div>
+  </header>
+
+  <div class="main-wrap">
+    
+    <!-- TOP HUD METRICS (DEV-TOOL DENSITY) -->
+    <div class="summary-strip">
+      <div class="metric-cell">
+        <span class="metric-label">Vouchers Oficiais Ativos</span>
+        <div class="metric-value-row">
+          <span class="metric-num" style="color: var(--accent-cyan)">4</span>
+          <span class="metric-desc">50% a 100% de desconto</span>
+        </div>
+      </div>
+      <div class="metric-cell">
+        <span class="metric-label">Prazo Crítico (&lt; 48 Horas)</span>
+        <div class="metric-value-row">
+          <span class="metric-num" style="color: var(--accent-red)">1</span>
+          <span class="metric-desc">Azure AI-102 (encerra amanhã)</span>
+        </div>
+      </div>
+      <div class="metric-cell">
+        <span class="metric-label">Micro-credenciais Gratuitas</span>
+        <div class="metric-value-row">
+          <span class="metric-num" style="color: var(--accent-emerald)">10</span>
+          <span class="metric-desc">Labs práticos contínuos</span>
+        </div>
+      </div>
+      <div class="metric-cell">
+        <span class="metric-label">Fit Médio com seu CV</span>
+        <div class="metric-value-row">
+          <span class="metric-num" style="color: #38BDF8">92%</span>
+          <span class="metric-desc">sem redundância com CAPM</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILTER & SEARCH ROW -->
+    <div class="control-row">
+      <div class="filter-tabs">
+        <button class="filter-btn active" onclick="setFilter('all', this)">
+          Para Você <span class="pill-count">14</span>
+        </button>
+        <button class="filter-btn" onclick="setFilter('voucher', this)">
+          Vouchers Oficiais <span class="pill-count">4</span>
+        </button>
+        <button class="filter-btn" onclick="setFilter('free', this)">
+          Gratuitas Contínuas <span class="pill-count">10</span>
+        </button>
+        <button class="filter-btn" onclick="setFilter('saved', this)">
+          Salvas <span class="pill-count">2</span>
+        </button>
+      </div>
+
+      <div class="search-wrap">
+        <input type="text" class="search-box" placeholder="Buscar por skill, exame ou provedor..." oninput="filterSearch(this.value)">
+      </div>
+    </div>
+
+    <!-- SPLIT LAYOUT: DENSE TABLE + LATERAL INSPECTOR -->
+    <div class="layout-split">
+      
+      <!-- DATA TABLE -->
+      <div class="table-container">
+        <table class="data-table" id="certTable">
+          <thead>
+            <tr>
+              <th style="width: 55px;">Fit</th>
+              <th>Certificação / Exame</th>
+              <th style="width: 110px;">Provedor</th>
+              <th style="width: 120px;">Trilha</th>
+              <th style="width: 140px;">Prazo / Voucher</th>
+              <th style="width: 70px; text-align: right;">Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <!-- ROW 1 -->
+            <tr class="selected" onclick="selectRow(this, 'ai102')" data-category="voucher">
+              <td>
+                <span class="score-badge score-high">94%</span>
+              </td>
+              <td>
+                <div class="exam-title-cell">
+                  <div class="exam-title-row">
+                    <span class="exam-name">Azure AI Engineer Associate</span>
+                    <span class="exam-code-tag">AI-102</span>
+                  </div>
+                  <div class="gaps-list">
+                    <span>Gaps:</span>
+                    <span class="gap-tag">Azure OpenAI</span>
+                    <span class="gap-tag">Prompt Flow</span>
+                    <span class="gap-tag">Cognitive Services</span>
+                  </div>
+                </div>
+              </td>
+              <td>Microsoft</td>
+              <td><span class="status-pill pill-voucher-100">100% OFF</span></td>
+              <td><span class="status-pill pill-urgent">⏳ 42h restantes</span></td>
+              <td style="text-align: right;">
+                <button class="btn-action-small" onclick="event.stopPropagation(); toggleSave(this)">⭐</button>
+              </td>
+            </tr>
+
+            <!-- ROW 2 -->
+            <tr onclick="selectRow(this, 'databricks-gai')" data-category="voucher">
+              <td>
+                <span class="score-badge score-high">91%</span>
+              </td>
+              <td>
+                <div class="exam-title-cell">
+                  <div class="exam-title-row">
+                    <span class="exam-name">Generative AI Engineer Associate</span>
+                    <span class="exam-code-tag">DAT-GAI</span>
+                  </div>
+                  <div class="gaps-list">
+                    <span>Gaps:</span>
+                    <span class="gap-tag">Vector Search</span>
+                    <span class="gap-tag">MLflow Evals</span>
+                    <span class="gap-tag">Enterprise RAG</span>
+                  </div>
+                </div>
+              </td>
+              <td>Databricks</td>
+              <td><span class="status-pill pill-voucher-50">50% OFF</span></td>
+              <td><span style="color:var(--text-muted); font-family:var(--font-mono); font-size:11px;">12 dias (30 Nov)</span></td>
+              <td style="text-align: right;">
+                <button class="btn-action-small" onclick="event.stopPropagation(); toggleSave(this)">⭐</button>
+              </td>
+            </tr>
+
+            <!-- ROW 3 -->
+            <tr onclick="selectRow(this, 'mcp-deeplearning')" data-category="free">
+              <td>
+                <span class="score-badge score-high">96%</span>
+              </td>
+              <td>
+                <div class="exam-title-cell">
+                  <div class="exam-title-row">
+                    <span class="exam-name">Building Systems with Model Context Protocol (MCP)</span>
+                    <span class="exam-code-tag">MCP-DL</span>
+                  </div>
+                  <div class="gaps-list">
+                    <span>Alinhamento:</span>
+                    <span class="gap-tag">FastMCP</span>
+                    <span class="gap-tag">Data Context Engine</span>
+                    <span class="gap-tag">Agentic Tools</span>
+                  </div>
+                </div>
+              </td>
+              <td>Anthropic</td>
+              <td><span class="status-pill pill-free">100% Grátis</span></td>
+              <td><span style="color:var(--accent-emerald); font-family:var(--font-mono); font-size:11px;">Sem expiração</span></td>
+              <td style="text-align: right;">
+                <button class="btn-action-small" onclick="event.stopPropagation(); toggleSave(this)">⭐</button>
+              </td>
+            </tr>
+
+            <!-- ROW 4 -->
+            <tr onclick="selectRow(this, 'dbt-dev')" data-category="voucher">
+              <td>
+                <span class="score-badge score-high">88%</span>
+              </td>
+              <td>
+                <div class="exam-title-cell">
+                  <div class="exam-title-row">
+                    <span class="exam-name">dbt Certified Developer</span>
+                    <span class="exam-code-tag">DBT-DEV</span>
+                  </div>
+                  <div class="gaps-list">
+                    <span>Gaps:</span>
+                    <span class="gap-tag">Semantic Layer</span>
+                    <span class="gap-tag">Jinja Macros</span>
+                    <span class="gap-tag">Data Governance</span>
+                  </div>
+                </div>
+              </td>
+              <td>dbt Labs</td>
+              <td><span class="status-pill pill-voucher-100">Bolsa dbt Learn</span></td>
+              <td><span style="color:var(--text-muted); font-family:var(--font-mono); font-size:11px;">18 dias (05 Dez)</span></td>
+              <td style="text-align: right;">
+                <button class="btn-action-small" onclick="event.stopPropagation(); toggleSave(this)">⭐</button>
+              </td>
+            </tr>
+
+            <!-- ROW 5 -->
+            <tr onclick="selectRow(this, 'ms-applied-doc')" data-category="free">
+              <td>
+                <span class="score-badge score-high">89%</span>
+              </td>
+              <td>
+                <div class="exam-title-cell">
+                  <div class="exam-title-row">
+                    <span class="exam-name">Build an Intelligent Document Processing Solution</span>
+                    <span class="exam-code-tag">MS-APP-01</span>
+                  </div>
+                  <div class="gaps-list">
+                    <span>Gaps:</span>
+                    <span class="gap-tag">Azure AI Search</span>
+                    <span class="gap-tag">Document OCR</span>
+                    <span class="gap-tag">Pipeline Data Extraction</span>
+                  </div>
+                </div>
+              </td>
+              <td>Microsoft</td>
+              <td><span class="status-pill pill-free">Lab Oficial</span></td>
+              <td><span style="color:var(--accent-emerald); font-family:var(--font-mono); font-size:11px;">Sem expiração</span></td>
+              <td style="text-align: right;">
+                <button class="btn-action-small" onclick="event.stopPropagation(); toggleSave(this)">⭐</button>
+              </td>
+            </tr>
+
+            <!-- ROW 6 -->
+            <tr onclick="selectRow(this, 'dp600-fabric')" data-category="voucher">
+              <td>
+                <span class="score-badge score-high">90%</span>
+              </td>
+              <td>
+                <div class="exam-title-cell">
+                  <div class="exam-title-row">
+                    <span class="exam-name">Implementing Analytics Solutions Using Microsoft Fabric</span>
+                    <span class="exam-code-tag">DP-600</span>
+                  </div>
+                  <div class="gaps-list">
+                    <span>Gaps:</span>
+                    <span class="gap-tag">Lakehouse Architecture</span>
+                    <span class="gap-tag">Fabric Semantic Models</span>
+                    <span class="gap-tag">Power BI DirectLake</span>
+                  </div>
+                </div>
+              </td>
+              <td>Microsoft</td>
+              <td><span class="status-pill pill-voucher-50">50% OFF (VTD)</span></td>
+              <td><span style="color:var(--text-muted); font-family:var(--font-mono); font-size:11px;">25 dias (12 Dez)</span></td>
+              <td style="text-align: right;">
+                <button class="btn-action-small" onclick="event.stopPropagation(); toggleSave(this)">⭐</button>
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+      <!-- LATERAL INSPECTION DRAWER (LINEAR / RAYCAST STYLE) -->
+      <aside class="drawer-panel" id="inspectorDrawer">
+        <div class="drawer-header">
+          <div>
+            <div class="drawer-title" id="dTitle">Azure AI Engineer Associate</div>
+            <div class="drawer-code" id="dCode">Exame AI-102 • Provedor: Microsoft • Nível: Associate</div>
+          </div>
+          <span class="status-pill pill-voucher-100" id="dVoucherBadge">100% OFF</span>
+        </div>
+
+        <div>
+          <div class="drawer-section-title">📊 Decomposição do Score de Fit</div>
+          <div class="score-breakdown-row">
+            <span>Alinhamento c/ Cargos-Alvo</span>
+            <span class="score-breakdown-val">35 / 35 (AI PM & Context Eng)</span>
+          </div>
+          <div class="score-breakdown-row">
+            <span>Fechamento de Gaps Reais</span>
+            <span class="score-breakdown-val">23 / 25 (Azure OpenAI, Prompt Flow)</span>
+          </div>
+          <div class="score-breakdown-row">
+            <span>Peso de Mercado (Recruiter Signal)</span>
+            <span class="score-breakdown-val">19 / 20 (Exame Oficial Proctored)</span>
+          </div>
+          <div class="score-breakdown-row">
+            <span>Custo & Urgência do Voucher</span>
+            <span class="score-breakdown-val" style="color:var(--accent-red)">17 / 20 (100% OFF • 42h restantes)</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="drawer-section-title">🎯 Justificativa Baseada no seu Currículo</div>
+          <div class="cv-justification-box" id="dJustification">
+            Seu perfil na Braskem e o projeto <strong>Data Context Engine</strong> já comprovam capacidade em governança analítica e dbt. Vagas de <strong>AI Product Manager</strong> e <strong>Context Engineer</strong> cobram fortemente arquitetura de modelos na nuvem. Este voucher do Cloud Skills Challenge economiza US$ 165,00.
+          </div>
+        </div>
+
+        <div>
+          <div class="drawer-section-title">⚙️ Ciclo de Conclusão</div>
+          <button class="btn-secondary-dense" style="width: 100%; text-align: center; margin-bottom: 8px;" onclick="generateCvSnippet()">
+            📋 Marcar Concluída & Copiar p/ cv.md
+          </button>
+        </div>
+
+        <div class="drawer-actions">
+          <a href="https://learn.microsoft.com" target="_blank" class="btn-primary-dense" id="dLink">
+            Acessar Página do Voucher ↗
+          </a>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+
+  <script>
+    const certDetails = {
+      'ai102': {
+        title: 'Azure AI Engineer Associate',
+        code: 'Exame AI-102 • Provedor: Microsoft • Nível: Associate',
+        voucher: '100% OFF',
+        voucherClass: 'pill-voucher-100',
+        justification: 'Seu perfil na Braskem e o projeto Data Context Engine já comprovam capacidade em governança analítica e dbt. Vagas de AI Product Manager e Context Engineer cobram fortemente arquitetura de modelos na nuvem. O voucher elimina a taxa de US$ 165,00.',
+        link: 'https://learn.microsoft.com/pt-br/credentials/certifications/azure-ai-engineer/'
+      },
+      'databricks-gai': {
+        title: 'Generative AI Engineer Associate',
+        code: 'Exame DAT-GAI • Provedor: Databricks • Nível: Associate',
+        voucher: '50% OFF',
+        voucherClass: 'pill-voucher-50',
+        justification: 'Fecha o gap de Vector Search em larga escala e governança corporativa de RAG com Unity Catalog. Excelente sinalização para vagas técnicas de AI PM.',
+        link: 'https://www.databricks.com/learn/certification'
+      },
+      'mcp-deeplearning': {
+        title: 'Building Systems with Model Context Protocol',
+        code: 'Certificação Técnica • Provedor: Anthropic / DeepLearning.AI',
+        voucher: '100% Grátis',
+        voucherClass: 'pill-free',
+        justification: 'Alinhamento direto de 100% com o FastMCP que você desenvolveu no Data Context Engine. Excelente para fixar no LinkedIn e GitHub.',
+        link: 'https://www.deeplearning.ai/'
+      },
+      'dbt-dev': {
+        title: 'dbt Certified Developer',
+        code: 'Exame DBT-DEV • Provedor: dbt Labs • Nível: Specialty',
+        voucher: 'Bolsa 100%',
+        voucherClass: 'pill-voucher-100',
+        justification: 'Valida formalmente sua maestria na camada semântica do dbt utilizada na Braskem e no DCE. Bolsa de 100% da comunidade ativa.',
+        link: 'https://www.getdbt.com/certifications'
+      },
+      'ms-applied-doc': {
+        title: 'Build an Intelligent Document Processing Solution',
+        code: 'Micro-credencial • Provedor: Microsoft Learn',
+        voucher: 'Lab Grátis',
+        voucherClass: 'pill-free',
+        justification: 'Micro-credencial com laboratório interativo com avaliação automática em ambiente de sandbox do Azure.',
+        link: 'https://learn.microsoft.com/credentials'
+      },
+      'dp600-fabric': {
+        title: 'Analytics Solutions with Microsoft Fabric',
+        code: 'Exame DP-600 • Provedor: Microsoft • Nível: Associate',
+        voucher: '50% OFF',
+        voucherClass: 'pill-voucher-50',
+        justification: 'Conecta diretamente sua experiência atual com Power BI na Braskem com a nova arquitetura unificada de Lakehouse da Microsoft.',
+        link: 'https://learn.microsoft.com/credentials/certifications/exams/dp-600/'
+      }
+    };
+
+    function selectRow(tr, id) {
+      document.querySelectorAll('#certTable tbody tr').forEach(r => r.classList.remove('selected'));
+      tr.classList.add('selected');
+
+      const data = certDetails[id];
+      if (data) {
+        document.getElementById('dTitle').innerText = data.title;
+        document.getElementById('dCode').innerText = data.code;
+        const vBadge = document.getElementById('dVoucherBadge');
+        vBadge.innerText = data.voucher;
+        vBadge.className = 'status-pill ' + data.voucherClass;
+        document.getElementById('dJustification').innerText = data.justification;
+        document.getElementById('dLink').href = data.link;
+      }
+    }
+
+    function setFilter(cat, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const rows = document.querySelectorAll('#certTable tbody tr');
+      rows.forEach(r => {
+        if (cat === 'all') r.style.display = '';
+        else if (cat === 'voucher') r.style.display = r.getAttribute('data-category') === 'voucher' ? '' : 'none';
+        else if (cat === 'free') r.style.display = r.getAttribute('data-category') === 'free' ? '' : 'none';
+        else if (cat === 'saved') r.style.display = r.getAttribute('data-saved') === 'true' ? '' : 'none';
+      });
+    }
+
+    function filterSearch(val) {
+      const q = val.toLowerCase();
+      const rows = document.querySelectorAll('#certTable tbody tr');
+      rows.forEach(r => {
+        r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none';
+      });
+    }
+
+    function toggleSave(btn) {
+      const row = btn.closest('tr');
+      const isSaved = row.getAttribute('data-saved') === 'true';
+      if (isSaved) {
+        row.removeAttribute('data-saved');
+        btn.innerText = '⭐';
+      } else {
+        row.setAttribute('data-saved', 'true');
+        btn.innerText = '★';
+        btn.style.color = '#F59E0B';
+      }
+    }
+
+    function generateCvSnippet() {
+      const title = document.getElementById('dTitle').innerText;
+      const snippet = `- ${title}, Microsoft (2026)`;
+      navigator.clipboard.writeText(snippet);
+      alert('Snippet copiado para a área de transferência:\n\n' + snippet + '\n\nPronto para colar em cv.md sob ## Certifications!');
+    }
+
+    // Keyboard navigation (j/k/Enter/o)
+    document.addEventListener('keydown', (e) => {
+      const rows = Array.from(document.querySelectorAll('#certTable tbody tr')).filter(r => r.style.display !== 'none');
+      let currentIndex = rows.findIndex(r => r.classList.contains('selected'));
+
+      if (e.key === 'j') {
+        const next = rows[currentIndex + 1] || rows[0];
+        if (next) next.click();
+      } else if (e.key === 'k') {
+        const prev = rows[currentIndex - 1] || rows[rows.length - 1];
+        if (prev) prev.click();
+      } else if (e.key === 'o') {
+        const link = document.getElementById('dLink').href;
+        if (link) window.open(link, '_blank');
+      }
+    });
+  </script>
+</body>
+</html>

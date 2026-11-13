@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+data/*.db
+data/*.db-journal
+data/*.db-wal
+.superpowers/
+.env
