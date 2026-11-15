@@ -105,7 +105,7 @@
               <th style="width: 110px;">Provedor</th>
               <th style="width: 120px;">Trilha</th>
               <th style="width: 140px;">Prazo / Voucher</th>
-              <th style="width: 70px; text-align: right;">Ação</th>
+              <th style="width: 96px; text-align: right;">Ações</th>
             </tr>
           </thead>
           <tbody id="certTableBody">
@@ -174,8 +174,11 @@
         </div>
 
         <div class="drawer-actions">
-          <a href="#" target="_blank" class="btn-primary-dense" id="dLink">
+          <a href="#" target="_blank" rel="noopener noreferrer" class="btn-primary-dense" id="dLink" onclick="openSelectedPrimaryUrl(event)">
             Acessar Página Oficial ↗
+          </a>
+          <a href="#" target="_blank" rel="noopener noreferrer" class="btn-secondary-dense" id="dSecondaryLink" style="display: none; margin-top: 8px; text-decoration: none; justify-content: center;" onclick="openSelectedSecondaryUrl(event)">
+            📄 Ver Página do Exame ↗
           </a>
         </div>
       </aside>

@@ -193,6 +193,9 @@ function renderTable() {
       .map(s => `<span class="gap-tag">${escapeHtml(s)}</span>`)
       .join('');
 
+    // Primary target URL for quick open
+    const primaryUrl = cert.voucher_program_url || cert.url || '';
+
     html += `
       <tr class="${isSelected ? 'selected' : ''}" data-id="${escapeHtml(cert.id)}" onclick="selectCert('${escapeHtml(cert.id)}')">
         <td>
@@ -201,7 +204,7 @@ function renderTable() {
         <td>
           <div class="exam-title-cell">
             <div class="exam-title-row">
-              <span class="exam-name">${escapeHtml(cert.title)}</span>
+              <span class="exam-name" style="cursor:pointer;" onclick="openExternalUrl('${escapeHtml(primaryUrl)}', event)" title="Clique para abrir: ${escapeHtml(primaryUrl)}">${escapeHtml(cert.title)} ↗</span>
               ${cert.exam_code ? `<span class="exam-code-tag">${escapeHtml(cert.exam_code)}</span>` : ''}
             </div>
             <div class="gaps-list">
@@ -213,7 +216,10 @@ function renderTable() {
         <td>${escapeHtml(cert.provider)}</td>
         <td>${trackPill}</td>
         <td>${deadlineText}</td>
-        <td style="text-align: right;">
+        <td style="text-align: right; white-space: nowrap;">
+          <button class="btn-action-small" title="Abrir link oficial (${escapeHtml(primaryUrl)})" onclick="openExternalUrl('${escapeHtml(primaryUrl)}', event)" style="margin-right: 4px;">
+            ↗
+          </button>
           <button class="btn-action-small ${isSaved ? 'saved' : ''}" title="Salvar / Remover dos favoritos" onclick="toggleSave('${escapeHtml(cert.id)}', event)">
             ${isSaved ? '★' : '⭐'}
           </button>
@@ -304,9 +310,72 @@ function selectCert(certId) {
     }
   });
 
-  // Official link
+  // Official & Voucher links
   const linkEl = document.getElementById('dLink');
-  linkEl.href = cert.voucher_program_url || cert.url || '#';
+  const secLinkEl = document.getElementById('dSecondaryLink');
+  const hasSeparateVoucherUrl = cert.voucher_program_url && cert.url && cert.voucher_program_url !== cert.url;
+
+  const primaryUrl = cert.voucher_program_url || cert.url || '#';
+  linkEl.href = primaryUrl;
+  linkEl.setAttribute('data-url', primaryUrl);
+
+  if (hasSeparateVoucherUrl) {
+    linkEl.innerText = '🎟️ Resgatar Voucher / Desafio ↗';
+    if (secLinkEl) {
+      secLinkEl.href = cert.url;
+      secLinkEl.setAttribute('data-url', cert.url);
+      secLinkEl.style.display = 'inline-flex';
+    }
+  } else {
+    linkEl.innerText = '🌐 Acessar Página Oficial ↗';
+    if (secLinkEl) {
+      secLinkEl.style.display = 'none';
+    }
+  }
+}
+
+// --- External URL Navigation (Native OS Browser + Webview Fallback) ---
+async function openExternalUrl(url, event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  if (!url || url === '#') {
+    showToast('URL não configurada para esta certificação.', true);
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/open-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+    if (res.ok) {
+      showToast('🌐 Abrindo link no seu navegador...');
+      return;
+    }
+  } catch (err) {
+    console.warn('Fallback to window.open:', err);
+  }
+
+  // Fallback for standalone browsers
+  const win = window.open(url, '_blank', 'noopener,noreferrer');
+  if (!win) {
+    window.location.href = url;
+  }
+}
+
+function openSelectedPrimaryUrl(event) {
+  const linkEl = document.getElementById('dLink');
+  const url = (linkEl && linkEl.getAttribute('data-url')) || (linkEl && linkEl.href);
+  openExternalUrl(url, event);
+}
+
+function openSelectedSecondaryUrl(event) {
+  const secLinkEl = document.getElementById('dSecondaryLink');
+  const url = (secLinkEl && secLinkEl.getAttribute('data-url')) || (secLinkEl && secLinkEl.href);
+  openExternalUrl(url, event);
 }
 
 // --- Status Updates & Progress ---
@@ -492,10 +561,7 @@ function setupKeyboardShortcuts() {
       visibleRows[prevIndex].scrollIntoView({ block: 'nearest' });
     } else if (e.key === 'o') {
       e.preventDefault();
-      const link = document.getElementById('dLink').href;
-      if (link && link !== '#') {
-        window.open(link, '_blank');
-      }
+      openSelectedPrimaryUrl(e);
     } else if (e.key === 'Enter') {
       e.preventDefault();
       document.getElementById('inspectorDrawer').scrollIntoView({ behavior: 'smooth' });

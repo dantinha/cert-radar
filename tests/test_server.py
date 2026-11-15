@@ -376,3 +376,21 @@ def test_run_server_invocation(db: Database, test_static_dir: Path):
         mock_webbrowser.assert_called_once_with("http://127.0.0.1:8999")
         mock_instance.shutdown.assert_called_once()
         mock_instance.server_close.assert_called_once()
+
+
+def test_post_open_url(live_server: str):
+    with patch("cert_radar.server.webbrowser.open") as mock_open:
+        with httpx.Client(base_url=live_server) as client:
+            res = client.post("/api/open-url", json={"url": "https://learn.microsoft.com/ai-102"})
+            assert res.status_code == 200
+            assert res.json()["success"] is True
+            mock_open.assert_called_once_with("https://learn.microsoft.com/ai-102", new=2)
+
+            # Invalid scheme
+            res_bad = client.post("/api/open-url", json={"url": "javascript:alert(1)"})
+            assert res_bad.status_code == 400
+
+            # Missing body
+            res_empty = client.post("/api/open-url", content=b"not-json")
+            assert res_empty.status_code == 400
+

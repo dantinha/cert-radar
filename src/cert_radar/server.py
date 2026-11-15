@@ -93,7 +93,7 @@ class CertRadarRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self._handle_get_profile()
             elif path == "/api/certs":
                 self._handle_get_certs()
-            elif path in ("/api/progress", "/api/add-url", "/api/generate-snippet"):
+            elif path in ("/api/progress", "/api/add-url", "/api/generate-snippet", "/api/open-url"):
                 self._send_error_json("Method Not Allowed", status=405)
             else:
                 self._send_error_json("Endpoint not found", status=404)
@@ -116,6 +116,8 @@ class CertRadarRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self._handle_post_add_url()
             elif path == "/api/generate-snippet":
                 self._handle_post_generate_snippet()
+            elif path == "/api/open-url":
+                self._handle_post_open_url()
             elif path in ("/api/profile", "/api/certs"):
                 self._drain_body()
                 self._send_error_json("Method Not Allowed", status=405)
@@ -357,6 +359,24 @@ tags:
             },
             status=200,
         )
+
+    def _handle_post_open_url(self) -> None:
+        body = self._read_json_body()
+        if not body or not isinstance(body, dict):
+            self._send_error_json("Invalid JSON body", status=400)
+            return
+
+        url = str(body.get("url", "")).strip()
+        if not url or not (url.startswith("http://") or url.startswith("https://")):
+            self._send_error_json("Valid http/https url is required", status=400)
+            return
+
+        try:
+            webbrowser.open(url, new=2)
+            self._send_json({"success": True, "url": url}, status=200)
+        except Exception as e:
+            logger.exception("Error opening URL in browser")
+            self._send_error_json(f"Error opening URL: {e}", status=500)
 
 
 def create_server(
