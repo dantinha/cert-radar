@@ -50,7 +50,7 @@ async function loadCerts() {
     updateMetrics();
 
     if (state.certs.length > 0) {
-      selectCert(state.certs[0].id);
+      selectCert(state.certs[0].id, false);
     }
   } catch (err) {
     console.error('Failed to load certs:', err);
@@ -197,7 +197,7 @@ function renderTable() {
     const primaryUrl = cert.voucher_program_url || cert.url || '';
 
     html += `
-      <tr class="${isSelected ? 'selected' : ''}" data-id="${escapeHtml(cert.id)}" onclick="selectCert('${escapeHtml(cert.id)}')">
+      <tr class="${isSelected ? 'selected' : ''}" data-id="${escapeHtml(cert.id)}" onclick="selectCert('${escapeHtml(cert.id)}', true)">
         <td>
           <span class="score-badge ${scoreClass}">${cert.score || 0}%</span>
         </td>
@@ -206,6 +206,11 @@ function renderTable() {
             <div class="exam-title-row">
               <span class="exam-name" style="cursor:pointer;" onclick="openExternalUrl('${escapeHtml(primaryUrl)}', event)" title="Clique para abrir: ${escapeHtml(primaryUrl)}">${escapeHtml(cert.title)} ↗</span>
               ${cert.exam_code ? `<span class="exam-code-tag">${escapeHtml(cert.exam_code)}</span>` : ''}
+            </div>
+            <div class="mobile-submeta">
+              <span>${escapeHtml(cert.provider)}</span>
+              ${trackPill}
+              ${deadlineText}
             </div>
             <div class="gaps-list">
               <span>Alinhamento:</span>
@@ -251,7 +256,23 @@ function formatDeadline(cert) {
 }
 
 // --- Selection & Inspector Drawer ---
-function selectCert(certId) {
+function openMobileDrawer() {
+  if (window.innerWidth <= 960) {
+    const drawer = document.getElementById('inspectorDrawer');
+    const backdrop = document.getElementById('drawerBackdrop');
+    if (drawer) drawer.classList.add('mobile-open');
+    if (backdrop) backdrop.classList.add('open');
+  }
+}
+
+function closeMobileDrawer() {
+  const drawer = document.getElementById('inspectorDrawer');
+  const backdrop = document.getElementById('drawerBackdrop');
+  if (drawer) drawer.classList.remove('mobile-open');
+  if (backdrop) backdrop.classList.remove('open');
+}
+
+function selectCert(certId, openDrawerOnMobile = false) {
   state.selectedId = certId;
   const cert = state.certs.find(c => c.id === certId);
   if (!cert) return;
@@ -332,9 +353,13 @@ function selectCert(certId) {
       secLinkEl.style.display = 'none';
     }
   }
+
+  if (openDrawerOnMobile) {
+    openMobileDrawer();
+  }
 }
 
-// --- External URL Navigation (Native OS Browser + Webview Fallback) ---
+// --- External URL Navigation (Client Mobile/Remote + Native OS Desktop Fallback) ---
 async function openExternalUrl(url, event) {
   if (event) {
     event.preventDefault();
@@ -345,24 +370,30 @@ async function openExternalUrl(url, event) {
     return;
   }
 
-  try {
-    const res = await fetch('/api/open-url', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url }),
-    });
-    if (res.ok) {
-      showToast('🌐 Abrindo link no seu navegador...');
-      return;
+  const isLocalDesktop =
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1';
+
+  if (isLocalDesktop) {
+    try {
+      const res = await fetch('/api/open-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      if (res.ok) {
+        showToast('🌐 Abrindo link no seu navegador...');
+        return;
+      }
+    } catch (err) {
+      console.warn('Fallback to window.open:', err);
     }
-  } catch (err) {
-    console.warn('Fallback to window.open:', err);
   }
 
-  // Fallback for standalone browsers
+  // Mobile, cloud deploy, or standalone browser navigation
   const win = window.open(url, '_blank', 'noopener,noreferrer');
   if (!win) {
-    window.location.href = url;
+    window.location.assign(url);
   }
 }
 
@@ -537,6 +568,7 @@ function setupKeyboardShortcuts() {
 
     if (e.key === 'Escape') {
       closeAddModal();
+      closeMobileDrawer();
       return;
     }
 

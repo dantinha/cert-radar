@@ -381,7 +381,7 @@ def test_real_catalog_ai_102_match(sample_profile: CandidateProfile):
     import json
     from pathlib import Path
 
-    catalog_path = Path("D:/Projetos/cert-radar/data/seed_catalog.json")
+    catalog_path = Path(__file__).resolve().parents[1] / "data" / "seed_catalog.json"
     if not catalog_path.exists():
         return
 
@@ -391,11 +391,11 @@ def test_real_catalog_ai_102_match(sample_profile: CandidateProfile):
     ai_102 = next((c for c in certs if c.exam_code == "AI-102"), None)
     assert ai_102 is not None
 
-    ref_date = date(2026, 11, 10)
+    ref_date = date(2026, 11, 16)
     match_result = calculate_match(sample_profile, ai_102, reference_date=ref_date)
 
-    # AI-102 aligns with AI Product Manager (35 pts), closes gaps (Azure OpenAI, Prompt Flow) (20 pts),
-    # recruiter_signal 5 (20 pts), voucher_100 active with deadline 2026-11-14 (<= 14 days) (20 pts)
+    # AI-102 aligns with AI Product Manager (35 pts), closes gaps (Azure OpenAI, Prompt Flow) (20+ pts),
+    # recruiter_signal 5 (20 pts), voucher_100 active with deadline 2026-11-28 (<= 14 days from 2026-11-16) (20 pts)
     # Total = 95
     assert match_result.score >= 90
     assert match_result.role_score == 35

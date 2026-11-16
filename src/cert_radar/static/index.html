@@ -2,8 +2,14 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#090A0F">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>CertRadar — Terminal Executivo de Certificações & Vouchers</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon.svg">
   <!-- Google Fonts: Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -116,6 +122,9 @@
         </table>
       </div>
 
+      <!-- MOBILE DRAWER BACKDROP -->
+      <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeMobileDrawer()"></div>
+
       <!-- LATERAL INSPECTION DRAWER (LINEAR / RAYCAST STYLE) -->
       <aside class="drawer-panel" id="inspectorDrawer">
         <div class="drawer-header">
@@ -123,7 +132,10 @@
             <div class="drawer-title" id="dTitle">Selecione uma certificação</div>
             <div class="drawer-code" id="dCode">Navegue com j / k ou clique na tabela</div>
           </div>
-          <span class="status-pill pill-voucher-100" id="dVoucherBadge">--</span>
+          <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+            <span class="status-pill pill-voucher-100" id="dVoucherBadge">--</span>
+            <button class="btn-action-small drawer-close-btn" id="drawerCloseBtn" onclick="closeMobileDrawer()" aria-label="Fechar painel">✕</button>
+          </div>
         </div>
 
         <div>
