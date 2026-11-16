@@ -370,3 +370,44 @@ def test_load_profile_when_upskill_returns_gaps(mock_career_ops: Path, monkeypat
     profile = load_profile(mock_career_ops)
     # Should NOT fallback to reports
     assert profile.gaps == ["PreExistingGap"]
+
+
+def test_profile_snapshot_export_and_cloud_fallback(tmp_path: Path):
+    from cert_radar.profile_bridge import export_profile_snapshot, load_profile_snapshot
+
+    profile = CandidateProfile(
+        full_name="Cloud Gabriel",
+        email="secret@example.com",
+        target_roles=["AI Product Manager"],
+        primary_archetypes=["Context Engineer"],
+        known_skills=["Python", "SQL"],
+        gaps=["TypeScript"],
+        existing_certifications=["CAPM"],
+    )
+
+    snap_file = tmp_path / "profile_snapshot.json"
+    export_profile_snapshot(profile, output_path=snap_file, include_email=False)
+    assert snap_file.is_file()
+
+    loaded_snap = load_profile_snapshot(snap_file)
+    assert loaded_snap is not None
+    assert loaded_snap.full_name == "Cloud Gabriel"
+    assert loaded_snap.email == ""  # Anonymized by default
+    assert loaded_snap.gaps == ["TypeScript"]
+
+    # Export with email
+    export_profile_snapshot(profile, output_path=snap_file, include_email=True)
+    assert load_profile_snapshot(snap_file).email == "secret@example.com"
+
+    # Fallback in load_profile when career-ops directory does not exist
+    missing_career_ops = tmp_path / "nonexistent_career_ops"
+    cloud_profile = load_profile(career_ops_root=missing_career_ops, snapshot_path=snap_file)
+    assert cloud_profile.full_name == "Cloud Gabriel"
+    assert "TypeScript" in cloud_profile.gaps
+
+    # Invalid / missing snapshot returns None gracefully
+    assert load_profile_snapshot(tmp_path / "missing.json") is None
+    bad_snap = tmp_path / "bad.json"
+    bad_snap.write_text("{invalid", encoding="utf-8")
+    assert load_profile_snapshot(bad_snap) is None
+

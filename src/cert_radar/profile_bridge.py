@@ -2,10 +2,11 @@
 
 import json
 import logging
+import os
 from pathlib import Path
 import re
 import subprocess
-from typing import Any
+from typing import Any, Optional
 
 from cert_radar.models import CandidateProfile
 
@@ -15,6 +16,16 @@ except ImportError:  # pragma: no cover
     yaml = None
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_CAREER_OPS_ROOT = os.environ.get("CAREER_OPS_ROOT", "D:\\Projetos\\career-ops")
+_PKG_SNAPSHOT_PATH = (
+    Path(__file__).resolve().parent.parent.parent / "data" / "profile_snapshot.json"
+)
+DEFAULT_SNAPSHOT_PATH = (
+    _PKG_SNAPSHOT_PATH
+    if _PKG_SNAPSHOT_PATH.is_file()
+    else Path.cwd() / "data" / "profile_snapshot.json"
+)
 
 
 def _parse_yaml_fallback(text: str) -> dict[str, Any]:
@@ -307,11 +318,51 @@ def extract_gaps_from_reports(reports_dir: Path) -> list[str]:
     return gaps
 
 
+def load_profile_snapshot(
+    snapshot_path: Path | str = DEFAULT_SNAPSHOT_PATH,
+) -> Optional[CandidateProfile]:
+    """Loads a pre-exported CandidateProfile JSON snapshot for cloud/serverless deploys."""
+    path = Path(snapshot_path)
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return CandidateProfile.model_validate(data)
+    except Exception as exc:
+        logger.warning("Failed to load profile snapshot from %s: %s", path, exc)
+        return None
+
+
+def export_profile_snapshot(
+    profile: CandidateProfile,
+    output_path: Path | str = DEFAULT_SNAPSHOT_PATH,
+    include_email: bool = False,
+) -> Path:
+    """Exports CandidateProfile to a JSON snapshot for cloud deployment."""
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = profile.model_dump()
+    if not include_email:
+        payload["email"] = ""
+    path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return path
+
+
 def load_profile(
-    career_ops_root: Path | str = "D:\\Projetos\\career-ops",
+    career_ops_root: Path | str = DEFAULT_CAREER_OPS_ROOT,
+    snapshot_path: Optional[Path | str] = None,
 ) -> CandidateProfile:
-    """Loads candidate profile from career-ops repository in strictly read-only mode."""
+    """Loads candidate profile from career-ops (read-only) with cloud snapshot fallback."""
     root = Path(career_ops_root)
+    if not root.is_dir():
+        snap = Path(snapshot_path) if snapshot_path else DEFAULT_SNAPSHOT_PATH
+        snapshot_profile = load_profile_snapshot(snap)
+        if snapshot_profile is not None:
+            logger.info("career-ops not found locally; loaded profile snapshot from %s", snap)
+            return snapshot_profile
 
     # 1. Parse config/profile.yml
     profile_data = parse_profile_yaml(root / "config" / "profile.yml")

@@ -411,3 +411,29 @@ def test_add_url_without_explicit_title(tmp_path: Path):
         assert len(certs) == 1
         assert "exam-1" in certs[0].id or "manual" in certs[0].title.lower()
 
+
+def test_serve_cloud_env_vars_resolution(monkeypatch):
+    monkeypatch.setenv("PORT", "10000")
+    monkeypatch.setenv("CERT_RADAR_DB_PATH", "/data/cert_radar.db")
+    parser = build_parser()
+    args = parser.parse_args(["serve", "--no-browser"])
+    assert args.host == "0.0.0.0"
+    assert args.port == 10000
+    assert args.db_path == "/data/cert_radar.db"
+
+
+def test_sync_profile_export_snapshot(tmp_path: Path, sample_profile: CandidateProfile, capsys):
+    snap_out = tmp_path / "profile_snapshot.json"
+    with patch("cert_radar.cli.profile_bridge.load_profile", return_value=sample_profile):
+        ret = main([
+            "sync-profile",
+            "--career-ops-dir", str(tmp_path),
+            "--export",
+            "--snapshot-path", str(snap_out),
+        ])
+        assert ret == 0
+        assert snap_out.is_file()
+        captured = capsys.readouterr()
+        assert "Snapshot de nuvem salvo em" in captured.out
+
+

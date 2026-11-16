@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: cert-radar
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: CERT_RADAR_HOST
+        value: 0.0.0.0
+      - key: CERT_RADAR_USER
+        value: gabriel
+      - key: CERT_RADAR_PASSWORD
+        sync: false

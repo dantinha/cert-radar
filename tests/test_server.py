@@ -349,19 +349,24 @@ def test_default_static_files(live_server: str):
     assert (DEFAULT_STATIC_DIR / "index.html").exists()
     assert (DEFAULT_STATIC_DIR / "style.css").exists()
     assert (DEFAULT_STATIC_DIR / "app.js").exists()
+    assert (DEFAULT_STATIC_DIR / "manifest.json").exists()
+    assert (DEFAULT_STATIC_DIR / "icon.svg").exists()
 
     index_content = (DEFAULT_STATIC_DIR / "index.html").read_text(encoding="utf-8")
     assert "CertRadar — Terminal Executivo" in index_content
     assert "app.js" in index_content
     assert "style.css" in index_content
+    assert "manifest.json" in index_content
 
     css_content = (DEFAULT_STATIC_DIR / "style.css").read_text(encoding="utf-8")
     assert "--bg-base: #090A0F;" in css_content
     assert ".app-header" in css_content
+    assert "@media (max-width: 960px)" in css_content
 
     js_content = (DEFAULT_STATIC_DIR / "app.js").read_text(encoding="utf-8")
     assert "initApp" in js_content
     assert "/api/certs" in js_content
+    assert "openMobileDrawer" in js_content
 
 
 def test_run_server_invocation(db: Database, test_static_dir: Path):
@@ -393,4 +398,29 @@ def test_post_open_url(live_server: str):
             # Missing body
             res_empty = client.post("/api/open-url", content=b"not-json")
             assert res_empty.status_code == 400
+
+
+def test_health_and_optional_basic_auth(live_server: str, monkeypatch):
+    with httpx.Client(base_url=live_server) as client:
+        # Health endpoint works without auth
+        res_health = client.get("/api/health")
+        assert res_health.status_code == 200
+        assert res_health.json() == {"status": "ok"}
+
+        # Enable basic auth via env vars
+        monkeypatch.setenv("CERT_RADAR_USER", "gabriel")
+        monkeypatch.setenv("CERT_RADAR_PASSWORD", "supersecret")
+
+        # Health still accessible for cloud load balancers
+        assert client.get("/api/health").status_code == 200
+
+        # Protected endpoints require valid credentials
+        assert client.get("/api/certs").status_code == 401
+        assert client.post("/api/progress", json={"cert_id": "x", "status": "saved"}).status_code == 401
+        assert client.get("/api/certs", auth=("gabriel", "wrongpass")).status_code == 401
+        assert client.get("/api/certs", auth=("otheruser", "supersecret")).status_code == 401
+
+        res_ok = client.get("/api/certs", auth=("gabriel", "supersecret"))
+        assert res_ok.status_code == 200
+
 

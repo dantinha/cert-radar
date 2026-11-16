@@ -25,7 +25,8 @@ from cert_radar.models import Certification
 
 logger = logging.getLogger("cert_radar.cli")
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+_PKG_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+REPO_ROOT = _PKG_REPO_ROOT if (_PKG_REPO_ROOT / "data").is_dir() else Path.cwd()
 DEFAULT_DB_PATH = REPO_ROOT / "data" / "cert_radar.db"
 DEFAULT_SEED_PATH = REPO_ROOT / "data" / "seed_catalog.json"
 DEFAULT_SOURCES_PATH = REPO_ROOT / "config" / "sources.yaml"
@@ -212,6 +213,13 @@ def _handle_sync_profile(args: argparse.Namespace) -> int:
         print(f"Certificações Atuais ({len(profile.existing_certifications)}):")
         for c in profile.existing_certifications:
             print(f"  ✓ {c}")
+    if getattr(args, "export", False):
+        snap_path = profile_bridge.export_profile_snapshot(
+            profile,
+            output_path=_resolve_path(args.snapshot_path),
+            include_email=False,
+        )
+        print(f"✓ Snapshot de nuvem salvo em: {snap_path}")
     print("=" * 65)
     return 0
 
@@ -307,12 +315,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="subcommand", help="Comando a ser executado")
 
+    default_port = int(os.environ.get("PORT", 8420))
+    default_host = os.environ.get("CERT_RADAR_HOST") or (
+        "0.0.0.0" if "PORT" in os.environ else "127.0.0.1"
+    )
+    default_db = os.environ.get("CERT_RADAR_DB_PATH") or str(DEFAULT_DB_PATH)
+
     # serve
     serve_parser = subparsers.add_parser("serve", help="Inicia o servidor e painel web local")
-    serve_parser.add_argument("--host", default="127.0.0.1", help="Interface de rede (default: 127.0.0.1)")
-    serve_parser.add_argument("--port", type=int, default=8420, help="Porta HTTP do servidor (default: 8420)")
+    serve_parser.add_argument("--host", default=default_host, help=f"Interface de rede (default: {default_host})")
+    serve_parser.add_argument("--port", type=int, default=default_port, help=f"Porta HTTP do servidor (default: {default_port})")
     serve_parser.add_argument("--no-browser", action="store_true", help="Não abre automaticamente o navegador padrão")
-    serve_parser.add_argument("--db-path", default=str(DEFAULT_DB_PATH), help=f"Caminho do banco SQLite (default: {DEFAULT_DB_PATH})")
+    serve_parser.add_argument("--db-path", default=default_db, help=f"Caminho do banco SQLite (default: {default_db})")
     serve_parser.add_argument("--seed-path", default=str(DEFAULT_SEED_PATH), help=f"Caminho do catálogo seed (default: {DEFAULT_SEED_PATH})")
     serve_parser.set_defaults(func=_handle_serve)
 
@@ -322,13 +336,15 @@ def build_parser() -> argparse.ArgumentParser:
     radar_parser.add_argument("--dry-run", action="store_true", help="Modo simulação: não dispara alertas externos (Windows/Telegram)")
     radar_parser.add_argument("--sources", default=str(DEFAULT_SOURCES_PATH), help=f"Arquivo de fontes (default: {DEFAULT_SOURCES_PATH})")
     radar_parser.add_argument("--career-ops-dir", default=str(DEFAULT_CAREER_OPS_DIR), help=f"Diretório do career-ops (default: {DEFAULT_CAREER_OPS_DIR})")
-    radar_parser.add_argument("--db-path", default=str(DEFAULT_DB_PATH), help=f"Caminho do banco SQLite (default: {DEFAULT_DB_PATH})")
+    radar_parser.add_argument("--db-path", default=default_db, help=f"Caminho do banco SQLite (default: {default_db})")
     radar_parser.add_argument("--env-file", default=".env", help="Arquivo .env com variáveis de ambiente (default: .env)")
     radar_parser.set_defaults(func=_handle_check_radar)
 
     # sync-profile
     profile_parser = subparsers.add_parser("sync-profile", help="Lê e exibe dados consolidados do perfil do candidato")
     profile_parser.add_argument("--career-ops-dir", default=str(DEFAULT_CAREER_OPS_DIR), help=f"Diretório do career-ops (default: {DEFAULT_CAREER_OPS_DIR})")
+    profile_parser.add_argument("--export", action="store_true", help="Exporta snapshot anonimizado em JSON para deploy em nuvem")
+    profile_parser.add_argument("--snapshot-path", default=str(profile_bridge.DEFAULT_SNAPSHOT_PATH), help="Caminho de saída do snapshot JSON")
     profile_parser.set_defaults(func=_handle_sync_profile)
 
     # setup-telegram

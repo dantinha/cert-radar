@@ -1,0 +1,46 @@
+{
+  "full_name": "Gabriel Dantas da Silva Oliveira",
+  "email": "",
+  "target_roles": [
+    "AI Product Manager",
+    "Context Engineer",
+    "AI Product Engineer",
+    "Technical Product Manager - Data & AI"
+  ],
+  "primary_archetypes": [
+    "AI Product Manager",
+    "Context Engineer / AI Product Builder",
+    "Technical Product Manager (Data & Analytics)",
+    "AI Solutions Architect / Forward Deployed Engineer"
+  ],
+  "known_skills": [
+    "CAPM",
+    "FastAPI",
+    "JavaScript",
+    "Kotlin",
+    "LLMs",
+    "Lean Six Sigma",
+    "PMBOK",
+    "Pandas",
+    "Power BI",
+    "Python",
+    "SEM",
+    "SQL",
+    "TDD",
+    "dbt",
+    "pytest"
+  ],
+  "gaps": [
+    "TypeScript",
+    "npm"
+  ],
+  "existing_certifications": [
+    "CAPM – Certified Associate in Project Management, Project Management Institute (PMI) (2024)",
+    "Formação Acessibilidade & Front-End (HTML, CSS3, JavaScript), Alura",
+    "Accessibility & Front-End Formation (HTML, CSS3, JavaScript), Alura",
+    "CAPM",
+    "CSS3",
+    "HTML",
+    "PMI"
+  ]
+}

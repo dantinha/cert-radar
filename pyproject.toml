@@ -3,10 +3,11 @@ name = "cert-radar"
 version = "0.1.0"
 description = "Sistema pessoal de curadoria, matching e radar contínuo de certificações e vouchers"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.7.0",
     "httpx>=0.27.0",
+    "pyyaml>=6.0",
 ]
 
 [project.scripts]

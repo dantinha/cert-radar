@@ -1,10 +1,13 @@
 """HTTP server and REST API backend for CertRadar."""
 
+import base64
+import hmac
 import http.server
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 import logging
 import mimetypes
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 import re
@@ -27,6 +30,7 @@ mimetypes.add_type("text/css", ".css")
 mimetypes.add_type("application/javascript", ".js")
 mimetypes.add_type("text/html", ".html")
 mimetypes.add_type("application/json", ".json")
+mimetypes.add_type("image/svg+xml", ".svg")
 
 
 class CertRadarRequestHandler(http.server.SimpleHTTPRequestHandler):
@@ -84,9 +88,45 @@ class CertRadarRequestHandler(http.server.SimpleHTTPRequestHandler):
         except Exception:
             return None
 
+    def _check_auth(self) -> bool:
+        """Checks optional HTTP Basic Auth when CERT_RADAR_PASSWORD is set."""
+        expected_pass = os.environ.get("CERT_RADAR_PASSWORD", "").strip()
+        if not expected_pass:
+            return True
+
+        expected_user = os.environ.get("CERT_RADAR_USER", "").strip()
+        auth_header = self.headers.get("Authorization", "")
+        if auth_header.startswith("Basic "):
+            try:
+                decoded = base64.b64decode(auth_header[6:].strip()).decode("utf-8")
+                if ":" in decoded:
+                    user, password = decoded.split(":", 1)
+                    pass_ok = hmac.compare_digest(password, expected_pass)
+                    user_ok = (not expected_user) or hmac.compare_digest(user, expected_user)
+                    if pass_ok and user_ok:
+                        return True
+            except Exception:
+                pass
+
+        payload = b"Unauthorized"
+        self.send_response(401)
+        self.send_header("WWW-Authenticate", 'Basic realm="CertRadar"')
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+        return False
+
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
+
+        if path == "/api/health":
+            self._send_json({"status": "ok"}, status=200)
+            return
+
+        if not self._check_auth():
+            return
 
         if path.startswith("/api/"):
             if path == "/api/profile":
@@ -109,6 +149,10 @@ class CertRadarRequestHandler(http.server.SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
 
+        if not self._check_auth():
+            self._drain_body()
+            return
+
         if path.startswith("/api/"):
             if path == "/api/progress":
                 self._handle_post_progress()
@@ -118,7 +162,7 @@ class CertRadarRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self._handle_post_generate_snippet()
             elif path == "/api/open-url":
                 self._handle_post_open_url()
-            elif path in ("/api/profile", "/api/certs"):
+            elif path in ("/api/profile", "/api/certs", "/api/health"):
                 self._drain_body()
                 self._send_error_json("Method Not Allowed", status=405)
             else:
